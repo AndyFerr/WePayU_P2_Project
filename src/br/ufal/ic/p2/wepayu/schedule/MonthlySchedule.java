@@ -1,25 +1,28 @@
 package br.ufal.ic.p2.wepayu.schedule;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
-/** Pagamento mensal: em um dia fixo do mês ou no último dia útil (feriados são ignorados). */
+/** Pagamento mensal: em um dia fixo do mês, ou no último dia útil (feriados são ignorados). */
 public class MonthlySchedule implements PaymentSchedule {
     private static final int LAST_BUSINESS_DAY = 0;
 
     private final int dayOfMonth;
+    private final String description;
 
-    private MonthlySchedule(int dayOfMonth) {
+    private MonthlySchedule(int dayOfMonth, String description) {
         this.dayOfMonth = dayOfMonth;
+        this.description = description;
     }
 
-    public static MonthlySchedule lastBusinessDay() {
-        return new MonthlySchedule(LAST_BUSINESS_DAY);
+    public static MonthlySchedule lastBusinessDay(String description) {
+        return new MonthlySchedule(LAST_BUSINESS_DAY, description);
     }
 
-    public static MonthlySchedule onDay(int dayOfMonth) {
-        return new MonthlySchedule(dayOfMonth);
+    public static MonthlySchedule onDay(int dayOfMonth, String description) {
+        return new MonthlySchedule(dayOfMonth, description);
     }
 
     @Override
@@ -36,6 +39,17 @@ public class MonthlySchedule implements PaymentSchedule {
             return payDay.withDayOfMonth(1);
         }
         return payDay.minusMonths(1).plusDays(1);
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    /** O período mensal sempre equivale a um mês inteiro de salário. */
+    @Override
+    public BigDecimal periodicSalary(BigDecimal monthlySalary) {
+        return monthlySalary;
     }
 
     private static LocalDate lastBusinessDayOf(YearMonth month) {

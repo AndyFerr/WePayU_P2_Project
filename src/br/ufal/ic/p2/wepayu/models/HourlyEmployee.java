@@ -19,7 +19,7 @@ public class HourlyEmployee extends Employee {
     private final List<TimeCard> timeCards = new ArrayList<>();
 
     public HourlyEmployee(String id, String name, String address, BigDecimal hourlyRate) {
-        super(id, name, address);
+        super(id, name, address, Schedules.WEEKLY);
         this.hourlyRate = hourlyRate;
     }
 
@@ -41,11 +41,6 @@ public class HourlyEmployee extends Employee {
     @Override
     public void setSalary(BigDecimal salary) {
         this.hourlyRate = salary;
-    }
-
-    @Override
-    public PaymentSchedule getSchedule() {
-        return Schedules.WEEKLY;
     }
 
     public void addTimeCard(TimeCard card) {

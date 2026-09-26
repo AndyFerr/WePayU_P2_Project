@@ -1,17 +1,16 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.schedule.Schedules;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Assalariado: salário fixo mensal, pago no último dia útil do mês. */
+/** Assalariado: salário mensal fixo; a fração paga em cada período depende da agenda escolhida. */
 public class SalariedEmployee extends Employee {
     private BigDecimal monthlySalary;
 
     public SalariedEmployee(String id, String name, String address, BigDecimal monthlySalary) {
-        super(id, name, address);
+        super(id, name, address, Schedules.MONTHLY);
         this.monthlySalary = monthlySalary;
     }
 
@@ -36,12 +35,7 @@ public class SalariedEmployee extends Employee {
     }
 
     @Override
-    public PaymentSchedule getSchedule() {
-        return Schedules.MONTHLY;
-    }
-
-    @Override
     public BigDecimal grossPay(LocalDate from, LocalDate toExclusive) {
-        return monthlySalary;
+        return getSchedule().periodicSalary(monthlySalary);
     }
 }

@@ -20,16 +20,19 @@ public abstract class Employee implements Serializable {
     private String address;
     private PaymentMethod paymentMethod = new HandPayment();
     private UnionMembership union;
+    private PaymentSchedule schedule;
 
-    protected Employee(String id, String name, String address) {
+    /** @param schedule agenda inicial (cada tipo tem seu default; ver US 9/10). */
+    protected Employee(String id, String name, String address, PaymentSchedule schedule) {
         this.id = id;
         this.name = name;
         this.address = address;
+        this.schedule = schedule;
     }
 
-    /** Usado na troca de tipo: preserva identidade, método de pagamento e sindicato. */
+    /** Usado na troca de tipo: preserva identidade, método de pagamento, sindicato e agenda. */
     protected Employee(Employee base) {
-        this(base.id, base.name, base.address);
+        this(base.id, base.name, base.address, base.schedule);
         this.paymentMethod = base.paymentMethod;
         this.union = base.union;
     }
@@ -44,14 +47,20 @@ public abstract class Employee implements Serializable {
 
     public abstract void setSalary(BigDecimal salary);
 
-    public abstract PaymentSchedule getSchedule();
-
     /** Salário bruto do período [from, toExclusive). */
     public abstract BigDecimal grossPay(LocalDate from, LocalDate toExclusive);
 
     /** Taxa de comissão; {@code null} quando o empregado não é comissionado. */
     public BigDecimal getCommissionRate() {
         return null;
+    }
+
+    public PaymentSchedule getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(PaymentSchedule schedule) {
+        this.schedule = schedule;
     }
 
     // ---- comportamento comum ------------------------------------------------------------------
@@ -91,6 +100,7 @@ public abstract class Employee implements Serializable {
             case "idSindicato" -> requireUnion().getMemberId();
             case "taxaSindical" -> Formats.rate(requireUnion().getFee());
             case "metodoPagamento" -> paymentMethod.getName();
+            case "agendaPagamento" -> schedule.getDescription();
             case "banco" -> requireBank().getBank();
             case "agencia" -> requireBank().getAgency();
             case "contaCorrente" -> requireBank().getAccount();

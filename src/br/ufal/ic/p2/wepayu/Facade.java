@@ -151,6 +151,14 @@ public class Facade {
         employees.updateEmployee(emp, atributo, valor, banco, agencia, contaCorrente);
     }
 
+    // ---- US9 / US10 -----------------------------------------------------------------------------
+
+    /** valor de agendaPagamento é tratado dentro do alteraEmpregado de 3 argumentos, acima. */
+    public void criarAgendaDePagamentos(String descricao) throws Exception {
+        ensureOpen();
+        employees.createSchedule(descricao);
+    }
+
     // ---- US7 ----------------------------------------------------------------------------------
 
     public void rodaFolha(String data, String saida) throws Exception {

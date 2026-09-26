@@ -1,6 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.schedule.Schedules;
 import br.ufal.ic.p2.wepayu.utils.DateRange;
 
@@ -11,8 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Comissionado: assalariado que também ganha um percentual das vendas.
- * Pago a cada 2 sextas: 2 semanas de salário fixo (salário x 12 / 26) + comissões do período.
+ * Comissionado: assalariado que também ganha um percentual das vendas. A parte fixa
+ * (salário) é a fração do salário mensal correspondente a um período da agenda escolhida;
+ * a comissão é sobre as vendas lançadas nesse mesmo período.
  */
 public class CommissionedEmployee extends Employee {
     private BigDecimal monthlySalary;
@@ -21,7 +21,7 @@ public class CommissionedEmployee extends Employee {
 
     public CommissionedEmployee(String id, String name, String address,
                                 BigDecimal monthlySalary, BigDecimal commissionRate) {
-        super(id, name, address);
+        super(id, name, address, Schedules.BIWEEKLY);
         this.monthlySalary = monthlySalary;
         this.commissionRate = commissionRate;
     }
@@ -56,11 +56,6 @@ public class CommissionedEmployee extends Employee {
         this.commissionRate = commissionRate;
     }
 
-    @Override
-    public PaymentSchedule getSchedule() {
-        return Schedules.BIWEEKLY;
-    }
-
     public void addSale(SalesResult sale) {
         sales.add(sale);
     }
@@ -73,7 +68,7 @@ public class CommissionedEmployee extends Employee {
     }
 
     public BigDecimal fixedPay() {
-        return monthlySalary.multiply(BigDecimal.valueOf(12)).divide(BigDecimal.valueOf(26), 2, RoundingMode.DOWN);
+        return getSchedule().periodicSalary(monthlySalary);
     }
 
     public BigDecimal commissionBetween(LocalDate from, LocalDate toExclusive) {

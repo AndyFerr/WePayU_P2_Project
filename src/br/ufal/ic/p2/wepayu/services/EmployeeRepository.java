@@ -1,6 +1,8 @@
 package br.ufal.ic.p2.wepayu.services;
 
 import br.ufal.ic.p2.wepayu.models.Employee;
+import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
+import br.ufal.ic.p2.wepayu.schedule.Schedules;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,7 +27,15 @@ public class EmployeeRepository {
 
     private static class State implements Serializable {
         final Map<String, Employee> employees = new LinkedHashMap<>();
+        /** Agendas disponíveis no sistema; começa só com as 3 default (US 9/10). */
+        final Map<String, PaymentSchedule> schedules = new LinkedHashMap<>();
         int nextId = 1;
+
+        State() {
+            schedules.put(Schedules.WEEKLY.getDescription(), Schedules.WEEKLY);
+            schedules.put(Schedules.BIWEEKLY.getDescription(), Schedules.BIWEEKLY);
+            schedules.put(Schedules.MONTHLY.getDescription(), Schedules.MONTHLY);
+        }
     }
 
     private State state = new State();
@@ -70,6 +80,15 @@ public class EmployeeRepository {
 
     public Collection<Employee> findAll() {
         return List.copyOf(state.employees.values());
+    }
+
+    public Optional<PaymentSchedule> findSchedule(String description) {
+        return Optional.ofNullable(state.schedules.get(description));
+    }
+
+    /** Registra uma nova agenda, indexada pela sua própria descrição. */
+    public void addSchedule(PaymentSchedule schedule) {
+        state.schedules.put(schedule.getDescription(), schedule);
     }
 
     public void clear() {

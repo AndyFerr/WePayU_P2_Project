@@ -12,6 +12,8 @@ import br.ufal.ic.p2.wepayu.models.SalesResult;
 import br.ufal.ic.p2.wepayu.models.ServiceCharge;
 import br.ufal.ic.p2.wepayu.models.TimeCard;
 import br.ufal.ic.p2.wepayu.models.UnionMembership;
+import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
+import br.ufal.ic.p2.wepayu.schedule.ScheduleParser;
 import br.ufal.ic.p2.wepayu.utils.Formats;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 
@@ -187,6 +189,7 @@ public class EmployeeService {
                 case "salario" -> employee.setSalary(parseSalary(value));
                 case "comissao" -> findCommissioned(id).setCommissionRate(parseCommission(value));
                 case "metodoPagamento" -> changePaymentMethod(employee, value, extra);
+                case "agendaPagamento" -> changeSchedule(employee, value);
                 case "sindicalizado" -> changeUnionMembership(employee, value, extra);
                 case "idSindicato" -> {
                     requireUnion(employee);
@@ -220,6 +223,25 @@ public class EmployeeService {
             }
         };
         repository.replace(replacement);
+    }
+
+    // ================================ US9 / US10: agendas de pagamento ==========================
+
+    private void changeSchedule(Employee employee, String description) throws WePayUException {
+        PaymentSchedule schedule = repository.findSchedule(description)
+                .orElseThrow(() -> new WePayUException("Agenda de pagamento nao esta disponivel"));
+        employee.setSchedule(schedule);
+    }
+
+    /** US10: registra uma nova agenda a partir de uma descrição como "semanal 2 3" ou "mensal 1". */
+    public void createSchedule(String description) throws WePayUException {
+        transactions.executeVoid(() -> {
+            PaymentSchedule schedule = ScheduleParser.parse(description);
+            if (repository.findSchedule(schedule.getDescription()).isPresent()) {
+                throw new WePayUException("Agenda de pagamentos ja existe");
+            }
+            repository.addSchedule(schedule);
+        });
     }
 
     private void changePaymentMethod(Employee employee, String method, String[] extra) throws WePayUException {
