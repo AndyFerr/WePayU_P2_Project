@@ -1,6 +1,7 @@
 package br.ufal.ic.p2.wepayu.services;
 
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.exceptions.EmployeeNotFoundException;
 import br.ufal.ic.p2.wepayu.models.BankPayment;
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;
 import br.ufal.ic.p2.wepayu.models.Employee;
@@ -287,11 +288,11 @@ public class EmployeeService {
 
     // ================================ helpers ===================================================
 
-    private Employee find(String id) throws WePayUException {
+    private Employee find(String id) throws EmployeeNotFoundException {
         if (Parsers.isBlank(id)) {
-            throw new WePayUException("Identificacao do empregado nao pode ser nula.");
+            throw EmployeeNotFoundException.missingId();
         }
-        return repository.findById(id).orElseThrow(() -> new WePayUException("Empregado nao existe."));
+        return repository.findById(id).orElseThrow(EmployeeNotFoundException::unknownId);
     }
 
     private HourlyEmployee findHourly(String id) throws WePayUException {

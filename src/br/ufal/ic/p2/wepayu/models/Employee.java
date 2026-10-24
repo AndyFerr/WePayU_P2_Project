@@ -22,7 +22,7 @@ public abstract class Employee implements Serializable {
     private UnionMembership union;
     private PaymentSchedule schedule;
 
-    /** @param schedule agenda inicial (cada tipo tem seu default; ver US 9/10). */
+    /** @param schedule agenda inicial (cada tipo tem seu default) */
     protected Employee(String id, String name, String address, PaymentSchedule schedule) {
         this.id = id;
         this.name = name;

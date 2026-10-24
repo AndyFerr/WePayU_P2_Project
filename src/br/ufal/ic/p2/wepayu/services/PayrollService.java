@@ -1,6 +1,7 @@
 package br.ufal.ic.p2.wepayu.services;
 
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.exceptions.ReportWriteException;
 import br.ufal.ic.p2.wepayu.models.Employee;
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.utils.Formats;
@@ -62,7 +63,7 @@ public class PayrollService {
             try {
                 writer.write(payDay, entries, Path.of(outputFile));
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ReportWriteException(outputFile, e);
             }
         });
     }

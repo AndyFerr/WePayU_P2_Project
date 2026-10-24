@@ -1,6 +1,7 @@
 package br.ufal.ic.p2.wepayu.schedule;
 
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.exceptions.ScheduleException;
 
 import java.time.DayOfWeek;
 
@@ -35,9 +36,9 @@ public final class ScheduleParser {
                 return parseMonthly(tokens, trimmed);
             }
         } catch (NumberFormatException e) {
-            throw new WePayUException(INVALID);
+            throw ScheduleException.invalidDescription();
         }
-        throw new WePayUException(INVALID);
+        throw ScheduleException.invalidDescription();
     }
 
     private static PaymentSchedule parseWeekly(String[] tokens, String description) throws WePayUException {
