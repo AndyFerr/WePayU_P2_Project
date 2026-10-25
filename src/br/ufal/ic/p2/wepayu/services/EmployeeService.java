@@ -1,7 +1,12 @@
 package br.ufal.ic.p2.wepayu.services;
 
-import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.exceptions.EmployeeNotFoundException;
+import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
+import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
+import br.ufal.ic.p2.wepayu.exceptions.ScheduleException;
+import br.ufal.ic.p2.wepayu.exceptions.UnionException;
+import br.ufal.ic.p2.wepayu.exceptions.UnknownAttributeException;
+import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.BankPayment;
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;
 import br.ufal.ic.p2.wepayu.models.Employee;
@@ -49,19 +54,19 @@ public class EmployeeService {
             throws WePayUException {
         return transactions.execute(() -> {
             if (Parsers.isBlank(name)) {
-                throw new WePayUException("Nome nao pode ser nulo.");
+                throw new InvalidValueException("Nome nao pode ser nulo.");
             }
             if (Parsers.isBlank(address)) {
-                throw new WePayUException("Endereco nao pode ser nulo.");
+                throw new InvalidValueException("Endereco nao pode ser nulo.");
             }
             if (type == null || !TYPES.contains(type)) {
-                throw new WePayUException("Tipo invalido.");
+                throw new InvalidValueException("Tipo invalido.");
             }
             BigDecimal salaryValue = parseSalary(salary);
             boolean commissioned = type.equals("comissionado");
             if (commissioned == (commission == null)) {
                 // comissionado sem comissão, ou outro tipo com comissão
-                throw new WePayUException("Tipo nao aplicavel.");
+                throw new InvalidValueException("Tipo nao aplicavel.");
             }
 
             String id = repository.nextId();
@@ -93,7 +98,7 @@ public class EmployeeService {
     public String findByName(String name, int index) throws WePayUException {
         List<Employee> matches = repository.findByName(name);
         if (index < 1 || index > matches.size()) {
-            throw new WePayUException("Nao ha empregado com esse nome.");
+            throw EmployeeNotFoundException.unknownName();
         }
         return matches.get(index - 1).getId();
     }
@@ -119,7 +124,7 @@ public class EmployeeService {
     public String getServiceCharges(String id, String start, String end) throws WePayUException {
         Employee employee = find(id);
         if (employee.getUnion() == null) {
-            throw new WePayUException("Empregado nao eh sindicalizado.");
+            throw EmployeeTypeMismatchException.notUnionMember();
         }
         LocalDate[] range = parseRange(start, end);
         return Formats.money(employee.getUnion().chargesBetween(range[0], range[1]));
@@ -132,7 +137,7 @@ public class EmployeeService {
             HourlyEmployee employee = findHourly(id);
             BigDecimal hoursValue = Parsers.decimal(hours, "Horas devem ser positivas.", "Horas devem ser numericas.");
             if (hoursValue.signum() <= 0) {
-                throw new WePayUException("Horas devem ser positivas.");
+                throw new InvalidValueException("Horas devem ser positivas.");
             }
             employee.addTimeCard(new TimeCard(Parsers.date(date, "Data invalida."), hoursValue));
         });
@@ -150,10 +155,10 @@ public class EmployeeService {
     public void postServiceCharge(String memberId, String date, String amount) throws WePayUException {
         transactions.executeVoid(() -> {
             if (Parsers.isBlank(memberId)) {
-                throw new WePayUException("Identificacao do membro nao pode ser nula.");
+                throw new InvalidValueException("Identificacao do membro nao pode ser nula.");
             }
             Employee employee = repository.findByUnionId(memberId)
-                    .orElseThrow(() -> new WePayUException("Membro nao existe."));
+                    .orElseThrow(UnionException::unknownMember);
             BigDecimal value = parsePositive(amount);
             employee.getUnion().addCharge(new ServiceCharge(Parsers.date(date, "Data invalida."), value));
         });
@@ -171,18 +176,18 @@ public class EmployeeService {
         transactions.executeVoid(() -> {
             Employee employee = find(id);
             if (attribute == null) {
-                throw new WePayUException("Atributo nao existe.");
+                throw new UnknownAttributeException();
             }
             switch (attribute) {
                 case "nome" -> {
                     if (Parsers.isBlank(value)) {
-                        throw new WePayUException("Nome nao pode ser nulo.");
+                        throw new InvalidValueException("Nome nao pode ser nulo.");
                     }
                     employee.setName(value);
                 }
                 case "endereco" -> {
                     if (Parsers.isBlank(value)) {
-                        throw new WePayUException("Endereco nao pode ser nulo.");
+                        throw new InvalidValueException("Endereco nao pode ser nulo.");
                     }
                     employee.setAddress(value);
                 }
@@ -201,36 +206,54 @@ public class EmployeeService {
                     requireUnion(employee);
                     employee.getUnion().setFee(parseUnionFee(value));
                 }
-                default -> throw new WePayUException("Atributo nao existe.");
+                default -> throw new UnknownAttributeException();
             }
         });
     }
 
+    /**
+     * Troca o regime de pagamento do empregado. O substituto nasce a partir do atual, então
+     * identidade, sindicato, método de pagamento, agenda e histórico de lançamentos são
+     * preservados; só muda o que o comando pediu.
+     *
+     * <p>Pedir o tipo que o empregado já tem não é um comando vazio: continua valendo para
+     * aplicar um salário ou uma comissão novos que venham junto.
+     */
     private void changeType(Employee current, String newType, String[] extra) throws WePayUException {
         if (newType == null || !TYPES.contains(newType)) {
-            throw new WePayUException("Tipo invalido.");
-        }
-        if (newType.equals(current.getType())) {
-            return;
+            throw new InvalidValueException("Tipo invalido.");
         }
         Employee replacement = switch (newType) {
             case "horista" -> new HourlyEmployee(current, salaryOrCurrent(current, arg(extra, 0)));
             case "assalariado" -> new SalariedEmployee(current, salaryOrCurrent(current, arg(extra, 0)));
-            default -> {
-                // "comissao" sozinha, ou "salario" seguido de "comissao"
-                BigDecimal salary = extra.length > 1 ? parseSalary(extra[0]) : current.getSalary();
-                BigDecimal commission = parseCommission(extra.length > 0 ? extra[extra.length - 1] : null);
-                yield new CommissionedEmployee(current, salary, commission);
-            }
+            default -> new CommissionedEmployee(current,
+                    commissionedSalary(current, extra),
+                    commissionedRate(current, extra));
         };
         repository.replace(replacement);
+    }
+
+    /** No comando, "comissao" vem sozinha ou precedida de "salario". */
+    private BigDecimal commissionedSalary(Employee current, String[] extra) throws InvalidValueException {
+        return extra.length > 1 ? parseSalary(extra[0]) : current.getSalary();
+    }
+
+    private BigDecimal commissionedRate(Employee current, String[] extra) throws InvalidValueException {
+        if (extra.length == 0) {
+            // já comissionado e sem comissão nova: mantém a atual
+            if (current.getCommissionRate() != null) {
+                return current.getCommissionRate();
+            }
+            throw new InvalidValueException("Comissao nao pode ser nula.");
+        }
+        return parseCommission(extra[extra.length - 1]);
     }
 
     // ================================ US9 / US10: agendas de pagamento ==========================
 
     private void changeSchedule(Employee employee, String description) throws WePayUException {
         PaymentSchedule schedule = repository.findSchedule(description)
-                .orElseThrow(() -> new WePayUException("Agenda de pagamento nao esta disponivel"));
+                .orElseThrow(ScheduleException::notAvailable);
         employee.setSchedule(schedule);
     }
 
@@ -239,7 +262,7 @@ public class EmployeeService {
         transactions.executeVoid(() -> {
             PaymentSchedule schedule = ScheduleParser.parse(description);
             if (repository.findSchedule(schedule.getDescription()).isPresent()) {
-                throw new WePayUException("Agenda de pagamentos ja existe");
+                throw ScheduleException.alreadyExists();
             }
             repository.addSchedule(schedule);
         });
@@ -251,17 +274,17 @@ public class EmployeeService {
             case "correios" -> employee.setPaymentMethod(new MailPayment());
             case "banco" -> {
                 if (Parsers.isBlank(arg(extra, 0))) {
-                    throw new WePayUException("Banco nao pode ser nulo.");
+                    throw new InvalidValueException("Banco nao pode ser nulo.");
                 }
                 if (Parsers.isBlank(arg(extra, 1))) {
-                    throw new WePayUException("Agencia nao pode ser nulo.");
+                    throw new InvalidValueException("Agencia nao pode ser nulo.");
                 }
                 if (Parsers.isBlank(arg(extra, 2))) {
-                    throw new WePayUException("Conta corrente nao pode ser nulo.");
+                    throw new InvalidValueException("Conta corrente nao pode ser nulo.");
                 }
                 employee.setPaymentMethod(new BankPayment(extra[0], extra[1], extra[2]));
             }
-            default -> throw new WePayUException("Metodo de pagamento invalido.");
+            default -> throw new InvalidValueException("Metodo de pagamento invalido.");
         }
     }
 
@@ -269,7 +292,7 @@ public class EmployeeService {
         if ("true".equals(flag)) {
             String unionId = arg(extra, 0);
             if (Parsers.isBlank(unionId)) {
-                throw new WePayUException("Identificacao do sindicato nao pode ser nula.");
+                throw new InvalidValueException("Identificacao do sindicato nao pode ser nula.");
             }
             BigDecimal fee = parseUnionFee(arg(extra, 1));
             ensureUnionIdAvailable(employee, unionId);
@@ -282,7 +305,7 @@ public class EmployeeService {
         } else if ("false".equals(flag)) {
             employee.setUnion(null);
         } else {
-            throw new WePayUException("Valor deve ser true ou false.");
+            throw new InvalidValueException("Valor deve ser true ou false.");
         }
     }
 
@@ -299,74 +322,74 @@ public class EmployeeService {
         if (find(id) instanceof HourlyEmployee hourly) {
             return hourly;
         }
-        throw new WePayUException("Empregado nao eh horista.");
+        throw EmployeeTypeMismatchException.notHourly();
     }
 
     private CommissionedEmployee findCommissioned(String id) throws WePayUException {
         if (find(id) instanceof CommissionedEmployee commissioned) {
             return commissioned;
         }
-        throw new WePayUException("Empregado nao eh comissionado.");
+        throw EmployeeTypeMismatchException.notCommissioned();
     }
 
-    private void requireUnion(Employee employee) throws WePayUException {
+    private void requireUnion(Employee employee) throws EmployeeTypeMismatchException {
         if (employee.getUnion() == null) {
-            throw new WePayUException("Empregado nao eh sindicalizado.");
+            throw EmployeeTypeMismatchException.notUnionMember();
         }
     }
 
     private void ensureUnionIdAvailable(Employee employee, String unionId) throws WePayUException {
         if (Parsers.isBlank(unionId)) {
-            throw new WePayUException("Identificacao do sindicato nao pode ser nula.");
+            throw new InvalidValueException("Identificacao do sindicato nao pode ser nula.");
         }
         Optional<Employee> owner = repository.findByUnionId(unionId);
         if (owner.isPresent() && !owner.get().getId().equals(employee.getId())) {
-            throw new WePayUException("Ha outro empregado com esta identificacao de sindicato");
+            throw UnionException.duplicatedMemberId();
         }
     }
 
-    private LocalDate[] parseRange(String start, String end) throws WePayUException {
+    private LocalDate[] parseRange(String start, String end) throws InvalidValueException {
         LocalDate from = Parsers.date(start, "Data inicial invalida.");
         LocalDate to = Parsers.date(end, "Data final invalida.");
         if (from.isAfter(to)) {
-            throw new WePayUException("Data inicial nao pode ser posterior aa data final.");
+            throw new InvalidValueException("Data inicial nao pode ser posterior aa data final.");
         }
         return new LocalDate[]{from, to};
     }
 
-    private BigDecimal parseSalary(String raw) throws WePayUException {
+    private BigDecimal parseSalary(String raw) throws InvalidValueException {
         BigDecimal value = Parsers.decimal(raw, "Salario nao pode ser nulo.", "Salario deve ser numerico.");
         if (value.signum() < 0) {
-            throw new WePayUException("Salario deve ser nao-negativo.");
+            throw new InvalidValueException("Salario deve ser nao-negativo.");
         }
         return value;
     }
 
-    private BigDecimal parseCommission(String raw) throws WePayUException {
+    private BigDecimal parseCommission(String raw) throws InvalidValueException {
         BigDecimal value = Parsers.decimal(raw, "Comissao nao pode ser nula.", "Comissao deve ser numerica.");
         if (value.signum() < 0) {
-            throw new WePayUException("Comissao deve ser nao-negativa.");
+            throw new InvalidValueException("Comissao deve ser nao-negativa.");
         }
         return value;
     }
 
-    private BigDecimal parseUnionFee(String raw) throws WePayUException {
+    private BigDecimal parseUnionFee(String raw) throws InvalidValueException {
         BigDecimal value = Parsers.decimal(raw, "Taxa sindical nao pode ser nula.", "Taxa sindical deve ser numerica.");
         if (value.signum() < 0) {
-            throw new WePayUException("Taxa sindical deve ser nao-negativa.");
+            throw new InvalidValueException("Taxa sindical deve ser nao-negativa.");
         }
         return value;
     }
 
-    private BigDecimal parsePositive(String raw) throws WePayUException {
+    private BigDecimal parsePositive(String raw) throws InvalidValueException {
         BigDecimal value = Parsers.decimal(raw, "Valor deve ser positivo.", "Valor deve ser numerico.");
         if (value.signum() <= 0) {
-            throw new WePayUException("Valor deve ser positivo.");
+            throw new InvalidValueException("Valor deve ser positivo.");
         }
         return value;
     }
 
-    private BigDecimal salaryOrCurrent(Employee current, String rawSalary) throws WePayUException {
+    private BigDecimal salaryOrCurrent(Employee current, String rawSalary) throws InvalidValueException {
         return rawSalary == null ? current.getSalary() : parseSalary(rawSalary);
     }
 

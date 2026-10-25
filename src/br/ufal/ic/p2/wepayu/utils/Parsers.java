@@ -1,6 +1,6 @@
 package br.ufal.ic.p2.wepayu.utils;
 
-import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,25 +23,25 @@ public final class Parsers {
 
     /** Aceita vírgula ou ponto como separador decimal ("2500,50"). */
     public static BigDecimal decimal(String raw, String nullMessage, String notNumericMessage)
-            throws WePayUException {
+            throws InvalidValueException {
         if (isBlank(raw)) {
-            throw new WePayUException(nullMessage);
+            throw new InvalidValueException(nullMessage);
         }
         try {
             return new BigDecimal(raw.trim().replace(',', '.'));
         } catch (NumberFormatException e) {
-            throw new WePayUException(notNumericMessage);
+            throw new InvalidValueException(notNumericMessage);
         }
     }
 
-    public static LocalDate date(String raw, String errorMessage) throws WePayUException {
+    public static LocalDate date(String raw, String errorMessage) throws InvalidValueException {
         if (isBlank(raw)) {
-            throw new WePayUException(errorMessage);
+            throw new InvalidValueException(errorMessage);
         }
         try {
             return LocalDate.parse(raw.trim(), DATE);
         } catch (DateTimeParseException e) {
-            throw new WePayUException(errorMessage);
+            throw new InvalidValueException(errorMessage);
         }
     }
 }

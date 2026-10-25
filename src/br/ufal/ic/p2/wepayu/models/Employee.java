@@ -1,5 +1,7 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
+import br.ufal.ic.p2.wepayu.exceptions.UnknownAttributeException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.utils.Formats;
@@ -21,20 +23,35 @@ public abstract class Employee implements Serializable {
     private PaymentMethod paymentMethod = new HandPayment();
     private UnionMembership union;
     private PaymentSchedule schedule;
+    private final EmployeeHistory history;
 
-    /** @param schedule agenda inicial (cada tipo tem seu default) */
+    /** @param schedule agenda inicial (cada tipo tem seu default; ver US 9/10). */
     protected Employee(String id, String name, String address, PaymentSchedule schedule) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.schedule = schedule;
+        this.history = new EmployeeHistory();
     }
 
-    /** Usado na troca de tipo: preserva identidade, método de pagamento, sindicato e agenda. */
+    /**
+     * Usado na troca de tipo: preserva identidade, método de pagamento, sindicato, agenda e,
+     * principalmente, o histórico de lançamentos. Trocar o regime de pagamento não apaga os
+     * cartões de ponto nem as vendas já registradas.
+     */
     protected Employee(Employee base) {
-        this(base.id, base.name, base.address, base.schedule);
+        this.id = base.id;
+        this.name = base.name;
+        this.address = base.address;
+        this.schedule = base.schedule;
         this.paymentMethod = base.paymentMethod;
         this.union = base.union;
+        this.history = base.history;
+    }
+
+    /** Lançamentos do empregado. Visível só para a hierarquia: não vaza para fora do modelo. */
+    protected EmployeeHistory history() {
+        return history;
     }
 
     // ---- comportamento específico de cada tipo ------------------------------------------------
@@ -82,7 +99,7 @@ public abstract class Employee implements Serializable {
     /** Implementa getAtributoEmpregado. */
     public String getAttribute(String attribute) throws WePayUException {
         if (attribute == null) {
-            throw new WePayUException("Atributo nao existe.");
+            throw new UnknownAttributeException();
         }
         return switch (attribute) {
             case "nome" -> name;
@@ -92,7 +109,7 @@ public abstract class Employee implements Serializable {
             case "comissao" -> {
                 BigDecimal rate = getCommissionRate();
                 if (rate == null) {
-                    throw new WePayUException("Empregado nao eh comissionado.");
+                    throw EmployeeTypeMismatchException.notCommissioned();
                 }
                 yield Formats.rate(rate);
             }
@@ -104,22 +121,22 @@ public abstract class Employee implements Serializable {
             case "banco" -> requireBank().getBank();
             case "agencia" -> requireBank().getAgency();
             case "contaCorrente" -> requireBank().getAccount();
-            default -> throw new WePayUException("Atributo nao existe.");
+            default -> throw new UnknownAttributeException();
         };
     }
 
-    private UnionMembership requireUnion() throws WePayUException {
+    private UnionMembership requireUnion() throws EmployeeTypeMismatchException {
         if (union == null) {
-            throw new WePayUException("Empregado nao eh sindicalizado.");
+            throw EmployeeTypeMismatchException.notUnionMember();
         }
         return union;
     }
 
-    private BankPayment requireBank() throws WePayUException {
+    private BankPayment requireBank() throws EmployeeTypeMismatchException {
         if (paymentMethod instanceof BankPayment bank) {
             return bank;
         }
-        throw new WePayUException("Empregado nao recebe em banco.");
+        throw EmployeeTypeMismatchException.notPaidByBank();
     }
 
     // ---- getters / setters --------------------------------------------------------------------

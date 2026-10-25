@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.wepayu.services;
 
+import br.ufal.ic.p2.wepayu.exceptions.NoCommandException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 
 import java.util.ArrayDeque;
@@ -54,17 +55,17 @@ public class TransactionManager {
         });
     }
 
-    public void undo() throws WePayUException {
+    public void undo() throws NoCommandException {
         if (undoStack.isEmpty()) {
-            throw new WePayUException("Nao ha comando a desfazer.");
+            throw NoCommandException.toUndo();
         }
         redoStack.push(repository.snapshot());
         repository.restore(undoStack.pop());
     }
 
-    public void redo() throws WePayUException {
+    public void redo() throws NoCommandException {
         if (redoStack.isEmpty()) {
-            throw new WePayUException("Nao ha comando a refazer.");
+            throw NoCommandException.toRedo();
         }
         undoStack.push(repository.snapshot());
         repository.restore(redoStack.pop());
