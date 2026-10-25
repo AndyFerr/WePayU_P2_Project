@@ -1,14 +1,14 @@
 package br.ufal.ic.p2.wepayu.services;
 
-import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
 import br.ufal.ic.p2.wepayu.exceptions.ReportWriteException;
+import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.Employee;
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.utils.Formats;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -48,7 +48,7 @@ public class PayrollService {
     }
 
     /** Total de salários brutos pagos na data. */
-    public String totalPayroll(String date) throws WePayUException {
+    public String totalPayroll(String date) throws InvalidValueException {
         return Formats.money(totalGross(entriesFor(Parsers.date(date, "Data invalida."))));
     }
 

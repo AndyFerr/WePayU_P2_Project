@@ -1,6 +1,5 @@
 package br.ufal.ic.p2.wepayu.schedule;
 
-import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.exceptions.ScheduleException;
 
 import java.time.DayOfWeek;
@@ -17,7 +16,6 @@ import java.time.DayOfWeek;
  * Qualquer outro formato, ou número fora da faixa, é inválido.
  */
 public final class ScheduleParser {
-
     private ScheduleParser() {
     }
 
