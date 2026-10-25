@@ -17,6 +17,26 @@ public interface PaymentSchedule extends Serializable {
     /** Primeiro dia (inclusive) do período pago em {@code payDay}. */
     LocalDate periodStart(LocalDate payDay);
 
+    /**
+     * Primeiro dia de pagamento em {@code day} ou depois dele.
+     *
+     * <p>Percorrer os dias é proposital: cada agenda decide o que é dia de pagamento à sua
+     * maneira (dia da semana, a cada N semanas, dia do mês, último dia útil), e quem precisa
+     * caminhar pelos pagamentos não deveria conhecer nenhuma dessas regras.
+     */
+    default LocalDate firstPayDayOnOrAfter(LocalDate day) {
+        LocalDate current = day;
+        while (!isPayDay(current)) {
+            current = current.plusDays(1);
+        }
+        return current;
+    }
+
+    /** Dia de pagamento seguinte a {@code day}. */
+    default LocalDate nextPayDayAfter(LocalDate day) {
+        return firstPayDayOnOrAfter(day.plusDays(1));
+    }
+
     /** String usada em agendaPagamento/criarAgendaDePagamentos (ex.: "semanal 5", "mensal $"). */
     String getDescription();
 

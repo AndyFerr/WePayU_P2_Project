@@ -66,9 +66,14 @@ public class HourlyEmployee extends Employee {
     /**
      * Horista não pode ter contracheque negativo: se as deduções (taxa sindical + taxas de serviço) do
      * período mais o débito acumulado superam o bruto, só se desconta até o bruto e o resto fica como débito
-     * para os próximos pagamentos. O débito é recalculado reprocessando as semanas desde o primeiro
+     * para os próximos pagamentos. O débito é recalculado reprocessando os pagamentos desde o primeiro
      * cartão de ponto (o horista é "contratado" no primeiro cartão), então rodar a folha de novo,
      * ou desfazer, sempre dá o mesmo resultado.
+     *
+     * <p>Os pagamentos são percorridos pela própria agenda ({@link PaymentSchedule#nextPayDayAfter}),
+     * e não de sete em sete dias: o horista pode ter qualquer agenda (US 9/10), e avançar uma semana
+     * fixa em uma agenda mensal ou quinzenal processa períodos que não são de pagamento — ou nunca
+     * alcança o dia procurado, deixando de descontar.
      */
     @Override
     public BigDecimal payrollDeductions(LocalDate payDay) {
@@ -76,12 +81,9 @@ public class HourlyEmployee extends Employee {
             return BigDecimal.ZERO;
         }
         PaymentSchedule schedule = getSchedule();
-        LocalDate day = history().firstTimeCardDate().orElseThrow();
-        while (!schedule.isPayDay(day)) {
-            day = day.plusDays(1);
-        }
         BigDecimal debt = BigDecimal.ZERO;
-        for (; !day.isAfter(payDay); day = day.plusDays(7)) {
+        LocalDate day = schedule.firstPayDayOnOrAfter(history().firstTimeCardDate().orElseThrow());
+        while (!day.isAfter(payDay)) {
             LocalDate from = schedule.periodStart(day);
             LocalDate toExclusive = day.plusDays(1);
             BigDecimal owed = deductions(from, toExclusive).add(debt);
@@ -90,6 +92,7 @@ public class HourlyEmployee extends Employee {
             if (day.equals(payDay)) {
                 return deducted;
             }
+            day = schedule.nextPayDayAfter(day);
         }
         return BigDecimal.ZERO;
     }
