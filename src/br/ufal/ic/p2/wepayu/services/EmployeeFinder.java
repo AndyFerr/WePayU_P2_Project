@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.wepayu.services;
 
+import br.ufal.ic.p2.wepayu.persistence.EmployeeRepository;
 import br.ufal.ic.p2.wepayu.exceptions.EmployeeNotFoundException;
 import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;

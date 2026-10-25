@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.wepayu.models;
+package br.ufal.ic.p2.wepayu.models.payment;
 
 /** Cheque pelos correios (enviado para o endereço do empregado). */
 public class MailPayment implements PaymentMethod {
@@ -8,7 +8,7 @@ public class MailPayment implements PaymentMethod {
     }
 
     @Override
-    public String describe(Employee employee) {
-        return "Correios, " + employee.getAddress();
+    public String describe(String employeeAddress) {
+        return "Correios, " + employeeAddress;
     }
 }

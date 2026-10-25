@@ -1,5 +1,8 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import br.ufal.ic.p2.wepayu.models.payment.BankPayment;
+import br.ufal.ic.p2.wepayu.models.payment.HandPayment;
+import br.ufal.ic.p2.wepayu.models.payment.PaymentMethod;
 import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
 import br.ufal.ic.p2.wepayu.exceptions.UnknownAttributeException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;

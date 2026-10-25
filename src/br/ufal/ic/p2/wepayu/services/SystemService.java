@@ -1,10 +1,11 @@
 package br.ufal.ic.p2.wepayu.services;
 
-import br.ufal.ic.p2.wepayu.exceptions.NoCommandException;
 import br.ufal.ic.p2.wepayu.exceptions.StatePersistenceException;
 import br.ufal.ic.p2.wepayu.exceptions.SystemClosedException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
+import br.ufal.ic.p2.wepayu.persistence.EmployeeRepository;
 import br.ufal.ic.p2.wepayu.persistence.FileStateStore;
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 
 import java.util.Optional;
 

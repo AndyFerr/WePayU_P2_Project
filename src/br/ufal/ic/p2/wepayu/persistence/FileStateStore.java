@@ -48,12 +48,4 @@ public class FileStateStore {
             throw StatePersistenceException.unreadable(describe(), e);
         }
     }
-
-    public void delete() throws StatePersistenceException {
-        try {
-            Files.deleteIfExists(file);
-        } catch (IOException e) {
-            throw StatePersistenceException.unwritable(describe(), e);
-        }
-    }
 }

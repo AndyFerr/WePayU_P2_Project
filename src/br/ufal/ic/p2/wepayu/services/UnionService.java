@@ -5,6 +5,8 @@ import br.ufal.ic.p2.wepayu.exceptions.UnionException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.Employee;
 import br.ufal.ic.p2.wepayu.models.ServiceCharge;
+import br.ufal.ic.p2.wepayu.persistence.EmployeeRepository;
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 import br.ufal.ic.p2.wepayu.utils.MonetaryField;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 import br.ufal.ic.p2.wepayu.utils.ValueParser;

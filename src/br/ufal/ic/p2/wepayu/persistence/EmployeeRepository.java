@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.wepayu.services;
+package br.ufal.ic.p2.wepayu.persistence;
 
 import br.ufal.ic.p2.wepayu.models.Employee;
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;

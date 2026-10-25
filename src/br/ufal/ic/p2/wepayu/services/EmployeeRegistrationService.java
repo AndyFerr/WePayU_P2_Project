@@ -1,5 +1,7 @@
 package br.ufal.ic.p2.wepayu.services;
 
+import br.ufal.ic.p2.wepayu.persistence.EmployeeRepository;
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;

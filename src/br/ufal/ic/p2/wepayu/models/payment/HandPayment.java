@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.wepayu.models;
+package br.ufal.ic.p2.wepayu.models.payment;
 
 /** Cheque em mãos. */
 public class HandPayment implements PaymentMethod {
@@ -8,7 +8,7 @@ public class HandPayment implements PaymentMethod {
     }
 
     @Override
-    public String describe(Employee employee) {
+    public String describe(String employeeAddress) {
         return "Em maos";
     }
 }

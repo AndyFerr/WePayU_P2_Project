@@ -1,12 +1,13 @@
 package br.ufal.ic.p2.wepayu.services;
 
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
 import br.ufal.ic.p2.wepayu.exceptions.UnknownAttributeException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
-import br.ufal.ic.p2.wepayu.models.BankPayment;
+import br.ufal.ic.p2.wepayu.models.payment.BankPayment;
 import br.ufal.ic.p2.wepayu.models.Employee;
-import br.ufal.ic.p2.wepayu.models.HandPayment;
-import br.ufal.ic.p2.wepayu.models.MailPayment;
+import br.ufal.ic.p2.wepayu.models.payment.HandPayment;
+import br.ufal.ic.p2.wepayu.models.payment.MailPayment;
 import br.ufal.ic.p2.wepayu.utils.MonetaryField;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 import br.ufal.ic.p2.wepayu.utils.ValueParser;

@@ -5,6 +5,7 @@ import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;
 import br.ufal.ic.p2.wepayu.models.HourlyEmployee;
 import br.ufal.ic.p2.wepayu.models.SalesResult;
 import br.ufal.ic.p2.wepayu.models.TimeCard;
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 import br.ufal.ic.p2.wepayu.utils.MonetaryField;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 import br.ufal.ic.p2.wepayu.utils.ValueParser;

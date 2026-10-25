@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.wepayu.models;
+package br.ufal.ic.p2.wepayu.models.payment;
 
 import br.ufal.ic.p2.wepayu.utils.Require;
 
@@ -32,7 +32,7 @@ public class BankPayment implements PaymentMethod {
     }
 
     @Override
-    public String describe(Employee employee) {
+    public String describe(String employeeAddress) {
         return bank + ", Ag. " + agency + " CC " + account;
     }
 }

@@ -5,13 +5,13 @@ import br.ufal.ic.p2.wepayu.persistence.FileStateStore;
 import br.ufal.ic.p2.wepayu.services.EmployeeFinder;
 import br.ufal.ic.p2.wepayu.services.EmployeeQueryService;
 import br.ufal.ic.p2.wepayu.services.EmployeeRegistrationService;
-import br.ufal.ic.p2.wepayu.services.EmployeeRepository;
+import br.ufal.ic.p2.wepayu.persistence.EmployeeRepository;
 import br.ufal.ic.p2.wepayu.services.EmployeeUpdateService;
-import br.ufal.ic.p2.wepayu.services.PayrollService;
+import br.ufal.ic.p2.wepayu.report.PayrollService;
 import br.ufal.ic.p2.wepayu.services.ScheduleService;
 import br.ufal.ic.p2.wepayu.services.SystemService;
 import br.ufal.ic.p2.wepayu.services.TimeSheetService;
-import br.ufal.ic.p2.wepayu.services.TransactionManager;
+import br.ufal.ic.p2.wepayu.persistence.TransactionManager;
 import br.ufal.ic.p2.wepayu.services.UnionService;
 
 import java.nio.file.Path;

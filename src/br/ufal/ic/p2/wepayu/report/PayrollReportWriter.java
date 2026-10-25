@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.wepayu.services;
+package br.ufal.ic.p2.wepayu.report;
 
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;
 import br.ufal.ic.p2.wepayu.models.Employee;
@@ -41,7 +41,7 @@ public class PayrollReportWriter {
         salariedSection(out, entries);
         commissionedSection(out, entries);
 
-        out.append("TOTAL FOLHA: ").append(Formats.money(PayrollService.totalGross(entries))).append(NL);
+        out.append("TOTAL FOLHA: ").append(Formats.money(PayrollEntry.totalGross(entries))).append(NL);
 
         if (output.getParent() != null) {
             Files.createDirectories(output.getParent());
@@ -156,7 +156,7 @@ public class PayrollReportWriter {
     }
 
     private static String method(Employee e) {
-        return e.getPaymentMethod().describe(e);
+        return e.getPaymentMethod().describe(e.getAddress());
     }
 
     private static List<PayrollEntry> only(List<PayrollEntry> entries, Class<? extends Employee> type) {
