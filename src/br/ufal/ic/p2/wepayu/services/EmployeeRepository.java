@@ -74,7 +74,7 @@ public class EmployeeRepository {
 
     public Optional<Employee> findByUnionId(String unionId) {
         return state.employees.values().stream()
-                .filter(e -> e.getUnion() != null && e.getUnion().getMemberId().equals(unionId))
+                .filter(e -> e.hasUnionMemberId(unionId))
                 .findFirst();
     }
 

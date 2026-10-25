@@ -2,6 +2,8 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.utils.DateRange;
 
+import br.ufal.ic.p2.wepayu.utils.Require;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,8 +20,8 @@ public class UnionMembership implements Serializable {
     private final List<ServiceCharge> charges = new ArrayList<>();
 
     public UnionMembership(String memberId, BigDecimal fee) {
-        this.memberId = memberId;
-        this.fee = fee;
+        this.memberId = Require.text(memberId, "Identificacao do membro");
+        this.fee = Require.nonNegative(fee, "Taxa sindical");
     }
 
     public String getMemberId() {
@@ -27,7 +29,7 @@ public class UnionMembership implements Serializable {
     }
 
     public void setMemberId(String memberId) {
-        this.memberId = memberId;
+        this.memberId = Require.text(memberId, "Identificacao do membro");
     }
 
     /** Taxa sindical cobrada por dia do período pago. */
@@ -36,11 +38,11 @@ public class UnionMembership implements Serializable {
     }
 
     public void setFee(BigDecimal fee) {
-        this.fee = fee;
+        this.fee = Require.nonNegative(fee, "Taxa sindical");
     }
 
     public void addCharge(ServiceCharge charge) {
-        charges.add(charge);
+        charges.add(Require.present(charge, "Taxa de servico"));
     }
 
     public BigDecimal chargesBetween(LocalDate from, LocalDate toExclusive) {

@@ -5,6 +5,7 @@ import br.ufal.ic.p2.wepayu.exceptions.UnknownAttributeException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.utils.Formats;
+import br.ufal.ic.p2.wepayu.utils.Require;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -27,10 +28,10 @@ public abstract class Employee implements Serializable {
 
     /** @param schedule agenda inicial (cada tipo tem seu default; ver US 9/10). */
     protected Employee(String id, String name, String address, PaymentSchedule schedule) {
-        this.id = id;
-        this.name = name;
-        this.address = address;
-        this.schedule = schedule;
+        this.id = Require.text(id, "Id do empregado");
+        this.name = Require.text(name, "Nome");
+        this.address = Require.text(address, "Endereco");
+        this.schedule = Require.present(schedule, "Agenda de pagamento");
         this.history = new EmployeeHistory();
     }
 
@@ -77,7 +78,7 @@ public abstract class Employee implements Serializable {
     }
 
     public void setSchedule(PaymentSchedule schedule) {
-        this.schedule = schedule;
+        this.schedule = Require.present(schedule, "Agenda de pagamento");
     }
 
     // ---- comportamento comum ------------------------------------------------------------------
@@ -150,7 +151,7 @@ public abstract class Employee implements Serializable {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = Require.text(name, "Nome");
     }
 
     public String getAddress() {
@@ -158,7 +159,7 @@ public abstract class Employee implements Serializable {
     }
 
     public void setAddress(String address) {
-        this.address = address;
+        this.address = Require.text(address, "Endereco");
     }
 
     public PaymentMethod getPaymentMethod() {
@@ -166,14 +167,59 @@ public abstract class Employee implements Serializable {
     }
 
     public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
+        this.paymentMethod = Require.present(paymentMethod, "Metodo de pagamento");
     }
 
-    public UnionMembership getUnion() {
-        return union;
+    // ---- sindicato ----------------------------------------------------------------------------
+    //
+    // A filiação não é exposta: quem precisa mexer nela pede ao empregado, que é quem conhece
+    // as regras. Devolver o objeto interno deixaria qualquer um alterar taxa e cobranças pelas
+    // costas do empregado.
+
+    public boolean isUnionMember() {
+        return union != null;
     }
 
-    public void setUnion(UnionMembership union) {
-        this.union = union;
+    /** Usado na busca por id de sindicato; não lança quando o empregado não é sindicalizado. */
+    public boolean hasUnionMemberId(String memberId) {
+        return union != null && union.getMemberId().equals(memberId);
+    }
+
+    public String getUnionMemberId() throws EmployeeTypeMismatchException {
+        return requireUnion().getMemberId();
+    }
+
+    public BigDecimal getUnionFee() throws EmployeeTypeMismatchException {
+        return requireUnion().getFee();
+    }
+
+    public void joinUnion(String memberId, BigDecimal fee) {
+        if (union == null) {
+            union = new UnionMembership(memberId, fee);
+        } else {
+            union.setMemberId(memberId);
+            union.setFee(fee);
+        }
+    }
+
+    public void leaveUnion() {
+        union = null;
+    }
+
+    public void changeUnionMemberId(String memberId) throws EmployeeTypeMismatchException {
+        requireUnion().setMemberId(memberId);
+    }
+
+    public void changeUnionFee(BigDecimal fee) throws EmployeeTypeMismatchException {
+        requireUnion().setFee(fee);
+    }
+
+    public void addServiceCharge(ServiceCharge charge) throws EmployeeTypeMismatchException {
+        requireUnion().addCharge(charge);
+    }
+
+    public BigDecimal serviceChargesBetween(LocalDate from, LocalDate toExclusive)
+            throws EmployeeTypeMismatchException {
+        return requireUnion().chargesBetween(from, toExclusive);
     }
 }

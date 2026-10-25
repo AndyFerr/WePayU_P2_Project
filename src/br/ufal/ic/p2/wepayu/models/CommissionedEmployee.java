@@ -1,13 +1,12 @@
 package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.schedule.Schedules;
-import br.ufal.ic.p2.wepayu.utils.DateRange;
+
+import br.ufal.ic.p2.wepayu.utils.Require;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Comissionado: assalariado que também ganha um percentual das vendas. A parte fixa
@@ -17,19 +16,18 @@ import java.util.List;
 public class CommissionedEmployee extends Employee {
     private BigDecimal monthlySalary;
     private BigDecimal commissionRate;
-    private final List<SalesResult> sales = new ArrayList<>();
 
     public CommissionedEmployee(String id, String name, String address,
                                 BigDecimal monthlySalary, BigDecimal commissionRate) {
         super(id, name, address, Schedules.BIWEEKLY);
-        this.monthlySalary = monthlySalary;
-        this.commissionRate = commissionRate;
+        this.monthlySalary = Require.nonNegative(monthlySalary, "Salario mensal");
+        this.commissionRate = Require.nonNegative(commissionRate, "Taxa de comissao");
     }
 
     public CommissionedEmployee(Employee base, BigDecimal monthlySalary, BigDecimal commissionRate) {
         super(base);
-        this.monthlySalary = monthlySalary;
-        this.commissionRate = commissionRate;
+        this.monthlySalary = Require.nonNegative(monthlySalary, "Salario mensal");
+        this.commissionRate = Require.nonNegative(commissionRate, "Taxa de comissao");
     }
 
     @Override
@@ -44,7 +42,7 @@ public class CommissionedEmployee extends Employee {
 
     @Override
     public void setSalary(BigDecimal salary) {
-        this.monthlySalary = salary;
+        this.monthlySalary = Require.nonNegative(salary, "Salario mensal");
     }
 
     @Override
@@ -53,16 +51,15 @@ public class CommissionedEmployee extends Employee {
     }
 
     public void setCommissionRate(BigDecimal commissionRate) {
-        this.commissionRate = commissionRate;
+        this.commissionRate = Require.nonNegative(commissionRate, "Taxa de comissao");
     }
 
     public void addSale(SalesResult sale) {
-        sales.add(sale);
+        history().addSale(sale);
     }
 
     public BigDecimal salesBetween(LocalDate from, LocalDate toExclusive) {
-        return sales.stream()
-                .filter(s -> DateRange.contains(s.date(), from, toExclusive))
+        return history().salesBetween(from, toExclusive)
                 .map(SalesResult::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

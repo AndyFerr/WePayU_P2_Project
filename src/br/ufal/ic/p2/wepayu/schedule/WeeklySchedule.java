@@ -1,5 +1,7 @@
 package br.ufal.ic.p2.wepayu.schedule;
 
+import br.ufal.ic.p2.wepayu.utils.Require;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
@@ -21,9 +23,9 @@ public class WeeklySchedule implements PaymentSchedule {
     private final String description;
 
     public WeeklySchedule(int everyWeeks, DayOfWeek dayOfWeek, String description) {
-        this.everyWeeks = everyWeeks;
-        this.dayOfWeek = dayOfWeek;
-        this.description = description;
+        this.everyWeeks = Require.inRange(everyWeeks, 1, WEEKS_PER_YEAR, "Intervalo em semanas");
+        this.dayOfWeek = Require.present(dayOfWeek, "Dia da semana");
+        this.description = Require.text(description, "Descricao da agenda");
     }
 
     @Override

@@ -1,6 +1,5 @@
 package br.ufal.ic.p2.wepayu.services;
 
-import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.CommissionedEmployee;
 import br.ufal.ic.p2.wepayu.models.Employee;
@@ -54,10 +53,7 @@ public class EmployeeQueryService {
 
     public String serviceCharges(String id, String start, String end) throws WePayUException {
         Employee employee = finder.byId(id);
-        if (employee.getUnion() == null) {
-            throw EmployeeTypeMismatchException.notUnionMember();
-        }
         Period period = ValueParser.period(start, end);
-        return Formats.money(employee.getUnion().chargesBetween(period.from(), period.toExclusive()));
+        return Formats.money(employee.serviceChargesBetween(period.from(), period.toExclusive()));
     }
 }

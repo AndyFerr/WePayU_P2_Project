@@ -1,5 +1,7 @@
 package br.ufal.ic.p2.wepayu.schedule;
 
+import br.ufal.ic.p2.wepayu.utils.Require;
+
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -8,13 +10,15 @@ import java.time.YearMonth;
 /** Pagamento mensal: em um dia fixo do mês, ou no último dia útil (feriados são ignorados). */
 public class MonthlySchedule implements PaymentSchedule {
     private static final int LAST_BUSINESS_DAY = 0;
+    /** O enunciado limita a agenda mensal ao dia 28, para que exista em todo mês. */
+    private static final int MAX_DAY_OF_MONTH = 28;
 
     private final int dayOfMonth;
     private final String description;
 
     private MonthlySchedule(int dayOfMonth, String description) {
         this.dayOfMonth = dayOfMonth;
-        this.description = description;
+        this.description = Require.text(description, "Descricao da agenda");
     }
 
     public static MonthlySchedule lastBusinessDay(String description) {
@@ -22,7 +26,7 @@ public class MonthlySchedule implements PaymentSchedule {
     }
 
     public static MonthlySchedule onDay(int dayOfMonth, String description) {
-        return new MonthlySchedule(dayOfMonth, description);
+        return new MonthlySchedule(Require.inRange(dayOfMonth, 1, MAX_DAY_OF_MONTH, "Dia do mes"), description);
     }
 
     @Override

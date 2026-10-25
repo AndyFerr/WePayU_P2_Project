@@ -2,13 +2,12 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.schedule.PaymentSchedule;
 import br.ufal.ic.p2.wepayu.schedule.Schedules;
-import br.ufal.ic.p2.wepayu.utils.DateRange;
+
+import br.ufal.ic.p2.wepayu.utils.Require;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 /** Horista: recebe por hora; acima de 8h/dia, a hora extra vale 1,5x. */
 public class HourlyEmployee extends Employee {
@@ -16,16 +15,15 @@ public class HourlyEmployee extends Employee {
     private static final BigDecimal OVERTIME_FACTOR = new BigDecimal("1.5");
 
     private BigDecimal hourlyRate;
-    private final List<TimeCard> timeCards = new ArrayList<>();
 
     public HourlyEmployee(String id, String name, String address, BigDecimal hourlyRate) {
         super(id, name, address, Schedules.WEEKLY);
-        this.hourlyRate = hourlyRate;
+        this.hourlyRate = Require.nonNegative(hourlyRate, "Salario por hora");
     }
 
     public HourlyEmployee(Employee base, BigDecimal hourlyRate) {
         super(base);
-        this.hourlyRate = hourlyRate;
+        this.hourlyRate = Require.nonNegative(hourlyRate, "Salario por hora");
     }
 
     @Override
@@ -40,20 +38,21 @@ public class HourlyEmployee extends Employee {
 
     @Override
     public void setSalary(BigDecimal salary) {
-        this.hourlyRate = salary;
+        this.hourlyRate = Require.nonNegative(salary, "Salario por hora");
     }
 
     public void addTimeCard(TimeCard card) {
-        timeCards.add(card);
+        history().addTimeCard(card);
     }
 
     public BigDecimal normalHours(LocalDate from, LocalDate toExclusive) {
-        return cardsBetween(from, toExclusive).map(c -> c.hours().min(DAILY_LIMIT))
+        return history().timeCardsBetween(from, toExclusive).map(c -> c.hours().min(DAILY_LIMIT))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal overtimeHours(LocalDate from, LocalDate toExclusive) {
-        return cardsBetween(from, toExclusive).map(c -> c.hours().subtract(DAILY_LIMIT).max(BigDecimal.ZERO))
+        return history().timeCardsBetween(from, toExclusive)
+                .map(c -> c.hours().subtract(DAILY_LIMIT).max(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -73,11 +72,11 @@ public class HourlyEmployee extends Employee {
      */
     @Override
     public BigDecimal payrollDeductions(LocalDate payDay) {
-        if (getUnion() == null || timeCards.isEmpty()) {
+        if (!isUnionMember() || !history().hasTimeCards()) {
             return BigDecimal.ZERO;
         }
         PaymentSchedule schedule = getSchedule();
-        LocalDate day = timeCards.stream().map(TimeCard::date).min(LocalDate::compareTo).orElseThrow();
+        LocalDate day = history().firstTimeCardDate().orElseThrow();
         while (!schedule.isPayDay(day)) {
             day = day.plusDays(1);
         }
@@ -93,9 +92,5 @@ public class HourlyEmployee extends Employee {
             }
         }
         return BigDecimal.ZERO;
-    }
-
-    private java.util.stream.Stream<TimeCard> cardsBetween(LocalDate from, LocalDate toExclusive) {
-        return timeCards.stream().filter(c -> DateRange.contains(c.date(), from, toExclusive));
     }
 }

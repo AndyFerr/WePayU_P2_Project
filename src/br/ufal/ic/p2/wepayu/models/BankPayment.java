@@ -1,5 +1,7 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import br.ufal.ic.p2.wepayu.utils.Require;
+
 /** Depósito em conta bancária. */
 public class BankPayment implements PaymentMethod {
     private final String bank;
@@ -7,9 +9,9 @@ public class BankPayment implements PaymentMethod {
     private final String account;
 
     public BankPayment(String bank, String agency, String account) {
-        this.bank = bank;
-        this.agency = agency;
-        this.account = account;
+        this.bank = Require.text(bank, "Banco");
+        this.agency = Require.text(agency, "Agencia");
+        this.account = Require.text(account, "Conta corrente");
     }
 
     public String getBank() {

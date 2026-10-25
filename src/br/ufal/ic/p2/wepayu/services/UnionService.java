@@ -1,12 +1,10 @@
 package br.ufal.ic.p2.wepayu.services;
 
-import br.ufal.ic.p2.wepayu.exceptions.EmployeeTypeMismatchException;
 import br.ufal.ic.p2.wepayu.exceptions.InvalidValueException;
 import br.ufal.ic.p2.wepayu.exceptions.UnionException;
 import br.ufal.ic.p2.wepayu.exceptions.WePayUException;
 import br.ufal.ic.p2.wepayu.models.Employee;
 import br.ufal.ic.p2.wepayu.models.ServiceCharge;
-import br.ufal.ic.p2.wepayu.models.UnionMembership;
 import br.ufal.ic.p2.wepayu.utils.MonetaryField;
 import br.ufal.ic.p2.wepayu.utils.Parsers;
 import br.ufal.ic.p2.wepayu.utils.ValueParser;
@@ -38,7 +36,7 @@ public class UnionService {
             Employee employee = repository.findByUnionId(memberId)
                     .orElseThrow(UnionException::unknownMember);
             BigDecimal value = ValueParser.positive(amount, MonetaryField.AMOUNT);
-            employee.getUnion().addCharge(new ServiceCharge(Parsers.date(date, "Data invalida."), value));
+            employee.addServiceCharge(new ServiceCharge(Parsers.date(date, "Data invalida."), value));
         });
     }
 
@@ -52,34 +50,21 @@ public class UnionService {
             BigDecimal fee = ValueParser.nonNegative(
                     extra.length > 1 ? extra[1] : null, MonetaryField.UNION_FEE);
             requireAvailableId(employee, unionId);
-            if (employee.getUnion() == null) {
-                employee.setUnion(new UnionMembership(unionId, fee));
-            } else {
-                employee.getUnion().setMemberId(unionId);
-                employee.getUnion().setFee(fee);
-            }
+            employee.joinUnion(unionId, fee);
         } else if ("false".equals(flag)) {
-            employee.setUnion(null);
+            employee.leaveUnion();
         } else {
             throw new InvalidValueException("Valor deve ser true ou false.");
         }
     }
 
     void changeMemberId(Employee employee, String unionId) throws WePayUException {
-        requireMember(employee);
         requireAvailableId(employee, unionId);
-        employee.getUnion().setMemberId(unionId);
+        employee.changeUnionMemberId(unionId);
     }
 
     void changeFee(Employee employee, String rawFee) throws WePayUException {
-        requireMember(employee);
-        employee.getUnion().setFee(ValueParser.nonNegative(rawFee, MonetaryField.UNION_FEE));
-    }
-
-    private void requireMember(Employee employee) throws EmployeeTypeMismatchException {
-        if (employee.getUnion() == null) {
-            throw EmployeeTypeMismatchException.notUnionMember();
-        }
+        employee.changeUnionFee(ValueParser.nonNegative(rawFee, MonetaryField.UNION_FEE));
     }
 
     private void requireAvailableId(Employee employee, String unionId) throws WePayUException {
